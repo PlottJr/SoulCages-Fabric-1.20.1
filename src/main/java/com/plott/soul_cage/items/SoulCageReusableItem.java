@@ -7,12 +7,15 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.NbtComponent;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
-import net.minecraft.client.item.TooltipContext;
+
+import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.text.Text;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
@@ -27,8 +30,6 @@ import java.util.Optional;
 import org.apache.logging.log4j.Logger;
 import com.plott.soul_cage.SoulCageMod;
 import org.apache.logging.log4j.LogManager;
-
-
 
 public class SoulCageReusableItem extends Item {
     private static final Logger LOGGER = LogManager.getLogger();
@@ -53,7 +54,7 @@ public class SoulCageReusableItem extends Item {
                 return ActionResult.PASS;
             }
 
-            NbtCompound nbt = stack.getOrCreateNbt();
+            NbtCompound nbt = stack.getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT).copyNbt();
 
             if (nbt.contains("CapturedEntity")) {
                 return ActionResult.FAIL;
@@ -72,6 +73,8 @@ public class SoulCageReusableItem extends Item {
                 return ActionResult.FAIL;
             }
 
+            stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
+
             player.getItemCooldownManager().set(this, 20);
 
             return ActionResult.SUCCESS;
@@ -83,7 +86,7 @@ public class SoulCageReusableItem extends Item {
     @Override
     public TypedActionResult<ItemStack> use(World world, PlayerEntity player, Hand hand) {
         ItemStack stack = player.getStackInHand(hand);
-        NbtCompound nbt = stack.getNbt();
+        NbtCompound nbt = stack.getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT).copyNbt();
 
         // Check if player is holding a SoulCage with cooldown active
         if (player.getItemCooldownManager().isCoolingDown(this)) {
@@ -97,7 +100,8 @@ public class SoulCageReusableItem extends Item {
                     NbtCompound entityTag = nbt.getCompound("CapturedEntity");
                     String entityTypeString = nbt.getString("CapturedEntityType");
 
-                    Optional<EntityType<?>> optionalEntityType = Registries.ENTITY_TYPE.getOrEmpty(new Identifier(entityTypeString));
+                    Optional<EntityType<?>> optionalEntityType = Registries.ENTITY_TYPE
+                            .getOrEmpty(Identifier.of(entityTypeString));
                     if (optionalEntityType.isPresent()) {
                         EntityType<?> entityType = optionalEntityType.get();
                         LivingEntity entity = (LivingEntity) entityType.create(world);
@@ -117,8 +121,7 @@ public class SoulCageReusableItem extends Item {
                                         targetPos.getY(),
                                         targetPos.getZ() + 0.5,
                                         player.getYaw(),
-                                        player.getPitch()
-                                );
+                                        player.getPitch());
 
                                 world.spawnEntity(entity); // Spawn the entity
 
@@ -127,7 +130,7 @@ public class SoulCageReusableItem extends Item {
                                 nbt.remove("CapturedEntityType");
 
                                 // Explicitly set the updated NBT back to the stack to persist it
-                                stack.setNbt(nbt);
+                                stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
                             }
                         } else {
                             LOGGER.error("Failed to create entity from captured data.");
@@ -151,8 +154,8 @@ public class SoulCageReusableItem extends Item {
 
     // Tooltip to indicate if a mob is stored in the SoulCage
     @Override
-    public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
-        NbtCompound nbt = stack.getNbt();
+    public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
+        NbtCompound nbt = stack.getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT).copyNbt();
         if (nbt != null && nbt.contains("CapturedEntityType")) {
             String entityTypeString = nbt.getString("CapturedEntityType");
             tooltip.add(Text.literal("Captured Mob: " + entityTypeString));

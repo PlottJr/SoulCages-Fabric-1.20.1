@@ -7,12 +7,15 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.NbtComponent;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
-import net.minecraft.client.item.TooltipContext;
+
+import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.text.Text;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
@@ -55,7 +58,7 @@ public class SoulCageSingleUseItem extends Item {
                 return ActionResult.PASS;
             }
 
-            NbtCompound nbt = stack.getOrCreateNbt();
+            NbtCompound nbt = stack.getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT).copyNbt();
 
             if (nbt.contains("CapturedEntity")) {
                 LOGGER.info("Capture failed: This SoulCage already contains a captured mob.");
@@ -73,7 +76,7 @@ public class SoulCageSingleUseItem extends Item {
 
                 LOGGER.info("Entity captured successfully with data: " + entityTag);
 
-                stack.setNbt(nbt);
+                stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
 
                 player.getItemCooldownManager().set(this, 20);
 
@@ -90,7 +93,7 @@ public class SoulCageSingleUseItem extends Item {
     @Override
     public TypedActionResult<ItemStack> use(World world, PlayerEntity player, Hand hand) {
         ItemStack stack = player.getStackInHand(hand);
-        NbtCompound nbt = stack.getNbt();
+        NbtCompound nbt = stack.getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT).copyNbt();
 
         // Check if player is holding a SoulCage with cooldown active
         if (player.getItemCooldownManager().isCoolingDown(this)) {
@@ -106,7 +109,8 @@ public class SoulCageSingleUseItem extends Item {
                     String entityTypeString = nbt.getString("CapturedEntityType");
                     LOGGER.info("Releasing entity of type: " + entityTypeString);
 
-                    Optional<EntityType<?>> optionalEntityType = Registries.ENTITY_TYPE.getOrEmpty(new Identifier(entityTypeString));
+                    Optional<EntityType<?>> optionalEntityType = Registries.ENTITY_TYPE
+                            .getOrEmpty(Identifier.of(entityTypeString));
                     if (optionalEntityType.isPresent()) {
                         EntityType<?> entityType = optionalEntityType.get();
                         LivingEntity entity = (LivingEntity) entityType.create(world);
@@ -126,8 +130,7 @@ public class SoulCageSingleUseItem extends Item {
                                         targetPos.getY(),
                                         targetPos.getZ() + 0.5,
                                         player.getYaw(),
-                                        player.getPitch()
-                                );
+                                        player.getPitch());
 
                                 world.spawnEntity(entity); // Spawn the entity
                                 LOGGER.info("Entity released successfully at " + targetPos.toShortString());
@@ -162,8 +165,8 @@ public class SoulCageSingleUseItem extends Item {
 
     // Tooltip to indicate if a mob is stored in the SoulCage
     @Override
-    public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
-        NbtCompound nbt = stack.getNbt();
+    public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
+        NbtCompound nbt = stack.getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT).copyNbt();
         if (nbt != null && nbt.contains("CapturedEntityType")) {
             String entityTypeString = nbt.getString("CapturedEntityType");
             tooltip.add(Text.literal("Captured Mob: " + entityTypeString));
