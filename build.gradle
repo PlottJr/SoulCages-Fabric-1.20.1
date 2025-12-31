@@ -49,9 +49,7 @@ processResources {
 	}
 }
 
-tasks.withType(JavaCompile).configureEach {
-	it.options.release = 17 // Change Java release to 17
-}
+
 
 java {
 	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
@@ -59,9 +57,9 @@ java {
 	// If you remove this line, sources will not be generated.
 	withSourcesJar()
 
-	// Set source and target compatibility to Java 17
-	sourceCompatibility = JavaVersion.VERSION_17
-	targetCompatibility = JavaVersion.VERSION_17
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
 }
 
 jar {

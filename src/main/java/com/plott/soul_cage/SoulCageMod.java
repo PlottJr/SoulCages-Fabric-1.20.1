@@ -30,7 +30,8 @@ public class SoulCageMod implements ModInitializer {
     public static Item ONE_TIME_SOUL_CAGE;
 
     // Declare the custom item group as a RegistryKey
-    public static final RegistryKey<ItemGroup> SOUL_CAGE_GROUP = RegistryKey.of(RegistryKeys.ITEM_GROUP, new Identifier("soul_cage", "general"));
+    public static final RegistryKey<ItemGroup> SOUL_CAGE_GROUP = RegistryKey.of(RegistryKeys.ITEM_GROUP,
+            Identifier.of("soul_cage", "general"));
 
     // Configuration variables
     public static boolean enableWhitelist = false;
@@ -48,8 +49,8 @@ public class SoulCageMod implements ModInitializer {
         ONE_TIME_SOUL_CAGE = new SoulCageSingleUseItem(new Item.Settings().maxCount(1));
 
         // Register items
-        Registry.register(Registries.ITEM, new Identifier("soul_cage", "reusable_soul_cage"), REUSABLE_SOUL_CAGE);
-        Registry.register(Registries.ITEM, new Identifier("soul_cage", "one_time_soul_cage"), ONE_TIME_SOUL_CAGE);
+        Registry.register(Registries.ITEM, Identifier.of("soul_cage", "reusable_soul_cage"), REUSABLE_SOUL_CAGE);
+        Registry.register(Registries.ITEM, Identifier.of("soul_cage", "one_time_soul_cage"), ONE_TIME_SOUL_CAGE);
 
         LOGGER.info("SoulCage items registered: reusable_soul_cage, one_time_soul_cage");
 
