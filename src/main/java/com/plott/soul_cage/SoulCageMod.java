@@ -75,7 +75,6 @@ public class SoulCageMod implements ModInitializer {
     private void initConfig() {
         // Initialize whitelist and blacklist here
         whitelist.add("minecraft:cow");
-        blacklist.add("minecraft:wither");
         blacklist.add("minecraft:player");
 
     }
